@@ -27,6 +27,9 @@ class Select:
             )
         )
 
+    def emit_print(self):
+        return print(self.emit())
+
     def from_(self, tables):
         self.from_clause = From(tables)
         return self
@@ -72,10 +75,6 @@ class GroupByTimeWindow:
         return f"GROUP BY {group_desc}"
 
 
-print(
-    Select("order_time", Computed("SUM(item_count)", "order_count"))
-    .from_("Orders")
-    .where("order_time BETWEEN '1970-01-01' AND '2000-01-01'")
-    .groupByTimeWindow("order_time", "month")
-    .emit()
-)
+Select("order_time", Computed("SUM(item_count)", "order_count")).from_("Orders").where(
+    "order_time BETWEEN '1970-01-01' AND '2000-01-01'"
+).groupByTimeWindow("order_time", "month").emit_print()
