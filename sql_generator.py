@@ -39,9 +39,9 @@ class Select:
         self.group_by_clause = GroupByTimeWindowFixed(field, time_unit, self)
         return self
 
-    def groupByTimeWindowAdjustable(self, field, time_unit, width):
+    def groupByTimeWindowAdjustable(self, field, time_unit, width, offset=0):
         self.group_by_clause = GroupByTimeWindowAdjustable(
-            field, time_unit, width, self
+            field, time_unit, width, self, offset
         )
         return self
 
@@ -80,11 +80,11 @@ class GroupByTimeWindowFixed:
 
 
 class GroupByTimeWindowAdjustable:
-    def __init__(self, column, time_unit, width, select_clause):
+    def __init__(self, column, time_unit, width, select_clause, offset=0):
         time_unit = time_unit.upper()
         *time_units_prefix, last_unit = TIME_UNITS[: TIME_UNITS.index(time_unit) + 1]
         self.group_exprs = [f"DATEPART({u}, {column})" for u in time_units_prefix] + [
-            f"DATEDIFF_BIG({last_unit}, 0, {column}) / {width}"
+            f"(DATEDIFF_BIG({last_unit}, 0, {column}) + {offset}) / {width}"
         ]
 
         select_clause.columns.remove(column)
@@ -102,3 +102,7 @@ Select("order_time", Computed("SUM(item_count)", "order_count")).from_("Orders")
 Select("tstamp", Computed("SUM(item_count)", "ITEM_COUNT")).from_(
     "Orders"
 ).groupByTimeWindowAdjustable("tstamp", "day", 10).emit_print()
+
+Select("tstamp", Computed("SUM(item_count)", "ITEM_COUNT")).from_(
+    "Orders"
+).groupByTimeWindowAdjustable("tstamp", "second", 15, 5).emit_print()
