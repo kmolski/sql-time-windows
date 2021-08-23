@@ -15,7 +15,7 @@ class Select:
         self.group_by_clause = None
 
     def emit(self):
-        columns_desc = ", ".join(
+        columns_desc = "\n\t, ".join(
             c.emit() if isinstance(c, Computed) else str(c) for c in self.columns
         )
         sql_source = f"SELECT {columns_desc}"
@@ -91,7 +91,7 @@ class GroupByTimeWindowAdjustable:
         select_clause.columns.extend(self.group_exprs)
 
     def emit(self):
-        group_desc = ", ".join(self.group_exprs)
+        group_desc = "\n\t, ".join(self.group_exprs)
         return f"GROUP BY {group_desc}"
 
 
