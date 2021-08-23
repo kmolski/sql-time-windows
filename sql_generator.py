@@ -71,7 +71,7 @@ class GroupByTimeWindowFixed:
         time_units_slice = TIME_UNITS[: TIME_UNITS.index(time_unit) + 1]
         self.group_exprs = [f"DATEPART({u}, {column})" for u in time_units_slice]
 
-        select_clause.columns.remove(column)
+        if column in select_clause.columns: select_clause.columns.remove(column)
         select_clause.columns.extend(self.group_exprs)
 
     def emit(self):
@@ -87,7 +87,7 @@ class GroupByTimeWindowAdjustable:
             f"(DATEDIFF_BIG({last_unit}, 0, {column}) + {offset}) / {width}"
         ]
 
-        select_clause.columns.remove(column)
+        if column in select_clause.columns: select_clause.columns.remove(column)
         select_clause.columns.extend(self.group_exprs)
 
     def emit(self):
@@ -95,7 +95,7 @@ class GroupByTimeWindowAdjustable:
         return f"GROUP BY {group_desc}"
 
 
-Select("order_time", Computed("SUM(item_count)", "order_count")).from_("Orders").where(
+Select(Computed("SUM(item_count)", "order_count")).from_("Orders").where(
     "order_time BETWEEN '1970-01-01' AND '2000-01-01'"
 ).groupByTimeWindowFixed("order_time", "month").emit_print()
 
@@ -103,6 +103,6 @@ Select("tstamp", Computed("SUM(item_count)", "ITEM_COUNT")).from_(
     "Orders"
 ).groupByTimeWindowAdjustable("tstamp", "day", 10).emit_print()
 
-Select("tstamp", Computed("SUM(item_count)", "ITEM_COUNT")).from_(
+Select(Computed("SUM(item_count)", "ITEM_COUNT")).from_(
     "Orders"
 ).groupByTimeWindowAdjustable("tstamp", "second", 15, 5).emit_print()
