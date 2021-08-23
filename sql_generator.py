@@ -75,7 +75,7 @@ class GroupByTimeWindowFixed:
         select_clause.columns.extend(self.group_exprs)
 
     def emit(self):
-        group_desc = ", ".join(self.group_exprs)
+        group_desc = "\n\t, ".join(self.group_exprs)
         return f"GROUP BY {group_desc}"
 
 
