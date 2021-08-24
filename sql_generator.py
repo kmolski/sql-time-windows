@@ -36,7 +36,9 @@ class Select:
         return self
 
     def groupByTimeWindowFixed(self, field, time_unit):
-        self.group_by_clause = GroupByTimeWindowFixed(field, time_unit, self)
+        self.group_by_clause = GroupByTimeWindowAdjustable(
+            field, time_unit, 1, self, 0
+        )
         return self
 
     def groupByTimeWindowAdjustable(self, field, time_unit, width, offset=0):
@@ -64,48 +66,20 @@ class Where:
 
 TIME_UNITS = ["YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND"]
 
-
-class GroupByTimeWindowFixed:
-    def __init__(self, column, time_unit, select_clause):
-        time_unit = time_unit.upper()
-        time_units_slice = TIME_UNITS[: TIME_UNITS.index(time_unit) + 1]
-        self.named_group_exprs = []
-        self.group_exprs = []
-        for u in time_units_slice:
-            expr = f"EXTRACT({u} FROM {column})"
-            self.group_exprs.append(expr)
-            self.named_group_exprs.append(Computed(expr, u))
-
-        if column in select_clause.columns: select_clause.columns.remove(column)
-        select_clause.columns.extend(self.named_group_exprs)
-
-    def emit(self):
-        group_desc = "\n\t, ".join(self.group_exprs)
-        return f"GROUP BY {group_desc}"
-
-
 class GroupByTimeWindowAdjustable:
     def __init__(self, column, time_unit, width, select_clause, offset=0):
         time_unit = time_unit.upper()
-        *time_units_prefix, last_unit = TIME_UNITS[: TIME_UNITS.index(time_unit) + 1]
-        self.named_group_exprs = []
+        # *time_units_prefix, last_unit = TIME_UNITS[: TIME_UNITS.index(time_unit) + 1]
+        named_group_exprs = []
         self.group_exprs = []
-        # for u in time_units_prefix:
-        #     expr = f"EXTRACT({u} FROM {column})"
-        #     self.group_exprs.append(expr)
-        #     self.named_group_exprs.append(Computed(expr, u))
 
-        datediff_expr = f"(TIMESTAMPDIFF({last_unit}, \"1970-01-01 00:00\", {column}) + {offset}) div {width}"
-        select_expr = f"TIMESTAMPADD({last_unit}, {datediff_expr} * {width} - {offset}, \"1970-01-01 00:00\")"
+        datediff_expr = f"(TIMESTAMPDIFF({time_unit }, \"1970-01-01 00:00\", {column}) + {offset}) div {width}"
+        select_expr = f"TIMESTAMPADD({time_unit }, {datediff_expr} * {width} - {offset}, \"1970-01-01 00:00\")"
         self.group_exprs.append(datediff_expr)
-        self.named_group_exprs.append(Computed(select_expr, "TimeWindowStart"))
-        
-        # self.group_exprs = [f"DATEPART({u}, {column})" for u in time_units_prefix] + [
-        #     f"(DATEDIFF_BIG({last_unit}, 0, {column}) + {offset}) / {width}"
-        # ]
+        named_group_exprs.append(Computed(select_expr, "TimeWindowStart"))
 
         if column in select_clause.columns: select_clause.columns.remove(column)
-        select_clause.columns.extend(self.named_group_exprs)
+        select_clause.columns.extend(named_group_exprs)
 
     def emit(self):
         group_desc = "\n\t, ".join(self.group_exprs)
@@ -120,10 +94,10 @@ class GroupByTimeWindowAdjustable:
 #     "Orders"
 # ).groupByTimeWindowAdjustable("tstamp", "day", 10).emit_print()
 
-# Select(Computed("COUNT(id)", "CountPerTimeWindow")).from_(
-#     "new_schema.timestamps"
-# ).groupByTimeWindowFixed("timestamp", "hour").emit_print()
+Select(Computed("SUM(item_count)", "CountPerTimeWindow")).from_(
+    "new_schema.bigtime"
+).groupByTimeWindowFixed("timestamp", "month").emit_print()
 
-Select(Computed("COUNT(id)", "CountPerTimeWindow")).from_(
+Select(Computed("SUM(item_count)", "CountPerTimeWindow")).from_(
    "new_schema.bigtime"
 ).groupByTimeWindowAdjustable("timestamp", "month", 2, 0).emit_print()
