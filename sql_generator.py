@@ -90,14 +90,15 @@ class GroupByTimeWindowAdjustable:
         *time_units_prefix, last_unit = TIME_UNITS[: TIME_UNITS.index(time_unit) + 1]
         self.named_group_exprs = []
         self.group_exprs = []
-        for u in time_units_prefix:
-            expr = f"EXTRACT({u} FROM {column})"
-            self.group_exprs.append(expr)
-            self.named_group_exprs.append(Computed(expr, u))
+        # for u in time_units_prefix:
+        #     expr = f"EXTRACT({u} FROM {column})"
+        #     self.group_exprs.append(expr)
+        #     self.named_group_exprs.append(Computed(expr, u))
 
-        datediff_expr = f"(UNIX_TIMESTAMP({column}) + {offset}) div {width}"
+        datediff_expr = f"(TIMESTAMPDIFF({last_unit}, \"1970-01-01 00:00\", {column}) + {offset}) div {width}"
+        select_expr = f"TIMESTAMPADD({last_unit}, {datediff_expr} * {width} - {offset}, \"1970-01-01 00:00\")"
         self.group_exprs.append(datediff_expr)
-        self.named_group_exprs.append(Computed(datediff_expr, last_unit))
+        self.named_group_exprs.append(Computed(select_expr, "TimeWindowStart"))
         
         # self.group_exprs = [f"DATEPART({u}, {column})" for u in time_units_prefix] + [
         #     f"(DATEDIFF_BIG({last_unit}, 0, {column}) + {offset}) / {width}"
@@ -119,10 +120,10 @@ class GroupByTimeWindowAdjustable:
 #     "Orders"
 # ).groupByTimeWindowAdjustable("tstamp", "day", 10).emit_print()
 
-Select(Computed("COUNT(id)", "CountPerTimeWindow")).from_(
-    "new_schema.timestamps"
-).groupByTimeWindowFixed("timestamp", "hour").emit_print()
+# Select(Computed("COUNT(id)", "CountPerTimeWindow")).from_(
+#     "new_schema.timestamps"
+# ).groupByTimeWindowFixed("timestamp", "hour").emit_print()
 
 Select(Computed("COUNT(id)", "CountPerTimeWindow")).from_(
-   "new_schema.timestamps"
-).groupByTimeWindowAdjustable("timestamp", "second", 15, 5).emit_print()
+   "new_schema.bigtime"
+).groupByTimeWindowAdjustable("timestamp", "month", 2, 0).emit_print()
