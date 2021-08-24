@@ -36,14 +36,14 @@ class Select:
         return self
 
     def groupByTimeWindowFixed(self, field, time_unit):
-        self.group_by_clause = GroupByTimeWindowAdjustable(
-            field, time_unit, 1, self, 0
+        self.group_by_clause = GroupByTimeWindow(
+            self, field, time_unit 
         )
         return self
 
-    def groupByTimeWindowAdjustable(self, field, time_unit, width, offset=0):
-        self.group_by_clause = GroupByTimeWindowAdjustable(
-            field, time_unit, width, self, offset
+    def groupByTimeWindowAdjustable(self, field, time_unit, width=1, offset=0):
+        self.group_by_clause = GroupByTimeWindow(
+            self, field, time_unit, width, offset
         )
         return self
 
@@ -66,16 +66,21 @@ class Where:
 
 TIME_UNITS = ["YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND"]
 
-class GroupByTimeWindowAdjustable:
-    def __init__(self, column, time_unit, width, select_clause, offset=0):
+class GroupByTimeWindow:
+    def __init__(self, select_clause, column, time_unit, width=1, offset=0):
         time_unit = time_unit.upper()
-        # *time_units_prefix, last_unit = TIME_UNITS[: TIME_UNITS.index(time_unit) + 1]
+        try:
+            index = TIME_UNITS.index(time_unit)
+        except ValueError:
+            raise Exception(f"Invalid time unit '{time_unit}'.")
+
         named_group_exprs = []
         self.group_exprs = []
 
         datediff_expr = f"(TIMESTAMPDIFF({time_unit }, \"1970-01-01 00:00\", {column}) + {offset}) div {width}"
         select_expr = f"TIMESTAMPADD({time_unit }, {datediff_expr} * {width} - {offset}, \"1970-01-01 00:00\")"
         self.group_exprs.append(datediff_expr)
+        if index < 3 : select_expr = f"DATE({select_expr})"
         named_group_exprs.append(Computed(select_expr, "TimeWindowStart"))
 
         if column in select_clause.columns: select_clause.columns.remove(column)
@@ -96,8 +101,8 @@ class GroupByTimeWindowAdjustable:
 
 Select(Computed("SUM(item_count)", "CountPerTimeWindow")).from_(
     "new_schema.bigtime"
-).groupByTimeWindowFixed("timestamp", "month").emit_print()
+).groupByTimeWindowFixed("timestamp", "hour").emit_print()
 
 Select(Computed("SUM(item_count)", "CountPerTimeWindow")).from_(
    "new_schema.bigtime"
-).groupByTimeWindowAdjustable("timestamp", "month", 2, 0).emit_print()
+).groupByTimeWindowAdjustable("timestamp", "mnth", 2, 0).emit_print()
