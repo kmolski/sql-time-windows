@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sql_generator
 import sys, getopt
 
