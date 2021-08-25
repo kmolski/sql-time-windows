@@ -69,26 +69,27 @@ TIME_UNITS = ["YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "SECOND"]
 class GroupByTimeWindow:
     def __init__(self, select_clause, column, time_unit, width=1, offset=0):
         time_unit = time_unit.upper()
-        try:
-            index = TIME_UNITS.index(time_unit)
-        except ValueError:
+        if time_unit not in TIME_UNITS:
             raise Exception(f"Invalid time unit '{time_unit}'.")
 
-        named_group_exprs = []
         self.group_exprs = []
 
         datediff_expr = f"(TIMESTAMPDIFF({time_unit }, \"1970-01-01 00:00\", {column}) + {offset}) div {width}"
-        select_expr = f"TIMESTAMPADD({time_unit }, {datediff_expr} * {width} - {offset}, \"1970-01-01 00:00\")"
+        self.select_expr = f"TIMESTAMPADD({time_unit }, {datediff_expr} * {width} - {offset}, \"1970-01-01 00:00\")"
         self.group_exprs.append(datediff_expr)
-        if index < 3 : select_expr = f"DATE({select_expr})"
-        named_group_exprs.append(Computed(select_expr, "TimeWindowStart"))
+        if TIME_UNITS.index(time_unit) < 3 : self.select_expr = f"DATE({self.select_expr})"
 
-        if column in select_clause.columns: select_clause.columns.remove(column)
-        select_clause.columns.extend(named_group_exprs)
+        if select_clause is not None:
+            if column in select_clause.columns: select_clause.columns.remove(column)
+            select_clause.columns.append(Computed(self.select_expr, "TimeWindowStart"))
 
     def emit(self):
         group_desc = "\n\t, ".join(self.group_exprs)
         return f"GROUP BY {group_desc}"
+
+    def sql_strings(self):
+        return f"SELECT {self.select_expr}", self.emit()
+
 
 
 # Select(Computed("SUM(item_count)", "order_count")).from_("Orders").where(
@@ -105,4 +106,6 @@ Select(Computed("SUM(item_count)", "CountPerTimeWindow")).from_(
 
 Select(Computed("SUM(item_count)", "CountPerTimeWindow")).from_(
    "new_schema.bigtime"
-).groupByTimeWindowAdjustable("timestamp", "mnth", 2, 0).emit_print()
+).groupByTimeWindowAdjustable("timestamp", "month", 2, 0).emit_print()
+
+print(GroupByTimeWindow(None, "timestamp", "month").sql_strings())
