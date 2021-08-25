@@ -72,6 +72,8 @@ class GroupByTimeWindow:
         if time_unit not in TIME_UNITS:
             raise Exception(f"Invalid time unit '{time_unit}'.")
 
+        if not column: column = "timestamp_column_name"
+
         self.group_exprs = []
 
         datediff_expr = f"(TIMESTAMPDIFF({time_unit }, \"1970-01-01 00:00\", {column}) + {offset}) div {width}"
