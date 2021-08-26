@@ -3,9 +3,18 @@
 import sql_generator
 import sys, getopt
 
+HELP_TEXT = """time_window.py --column <timestamp column name> --unit <time unit> [--width <time window width>] [--offset <time window offset>]
+
+Examples:
+    time_window.py --column tstamp --unit day --width 2
+    time_window.py --column tstamp --unit second --width 10 --offset 5
+    time_window.py --column tstamp --unit hour 
+    time_window.py -c tstamp -u minute -w 15 -o 10 
+"""
+
+
 def print_help():
-    help = "Example: time_window.py --column <timestamp column name> --unit <time unit> [--width <time window width>] [--offset <time window offset>]"
-    print(help)
+    print(HELP_TEXT)
 
 
 def main(argv):
