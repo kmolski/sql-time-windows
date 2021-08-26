@@ -69,15 +69,49 @@ class GroupByTimeWindow:
         if time_unit not in TIME_UNITS:
             raise Exception(f"Invalid time unit '{time_unit}'.")
 
-        if not column: column = "timestamp_column_name"
+        if not column:
+            column = "timestamp_column_name"
 
         self.group_exprs = []
 
         datediff_expr = f"(TIMESTAMPDIFF({time_unit}, '1970-01-01 00:00', {column}) + {offset}) div {width}"
         self.select_expr = f"TIMESTAMPADD({time_unit}, {datediff_expr} * {width} - {offset}, '1970-01-01 00:00')"
         self.group_exprs.append(datediff_expr)
+
+        self.datediff_tree = {
+            "integer_div": [
+                {
+                    "add": [
+                        {
+                            "timestampdiff": [
+                                time_unit,
+                                {"literal": "1970-01-01 00:00"},
+                                column,
+                            ]
+                        },
+                        offset,
+                    ]
+                },
+                width,
+            ]
+        }
+        self.select_tree = {
+            "value": {
+                "timestampadd": [
+                    time_unit,
+                    {"sub": [{"mul": [self.datediff_tree, width]}, offset]},
+                    {"literal": "1970-01-01 00:00"},
+                ]
+            },
+            "name": column,
+        }
+
         if TIME_UNITS.index(time_unit) < 3:
             self.select_expr = f"DATE({self.select_expr})"
+            self.select_tree = {
+                "value": {"date": {"value": self.select_tree["value"]}},
+                "name": self.select_tree["name"],
+            }
 
         if select_clause is not None:
             if column in select_clause.columns:
@@ -91,3 +125,5 @@ class GroupByTimeWindow:
     def sql_strings(self):
         return f"SELECT {self.select_expr}", self.emit()
 
+    def sql_tree(self):
+        return self.select_tree, self.datediff_tree
