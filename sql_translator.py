@@ -19,8 +19,9 @@ GROUP BY TIME_WINDOW(<time unit>, <timestamp column name>,
 To convert a time-window query, type it below and press Enter two times.
 
 At any point, you can enter the following commands to access additional functionality:
-  ':quit' - Quit the program
-  ':help' - Show the help screen
+  ':clear' - Clear the query input
+  ':quit'  - Quit the program
+  ':help'  - Show the help screen
 """
 
 
@@ -79,10 +80,14 @@ def main():
 
     sql_query = ""
     for line in sys.stdin:
-        if line.strip() == ":quit":
-            break
-        if line.strip() == ":help":
+        command = line.strip()
+        if command == ":clear":
+            sql_query = ""
+        elif command == ":help":
             print_help()
+        elif command == ":quit":
+            break
+
         if len(line) > 1:
             sql_query += line
         elif sql_query:
