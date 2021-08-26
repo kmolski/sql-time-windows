@@ -4,6 +4,7 @@ import sys
 
 from sql_generator import GroupByTimeWindow, TIME_UNITS
 from mo_sql_parsing import parse, format
+from mo_parsing.exceptions import ParseException
 
 HELP_TEXT = """sql-time-windows script generator v0.1.0
 
@@ -79,6 +80,7 @@ def main():
     print("> ", end="", flush=True)
 
     sql_query = ""
+
     for line in sys.stdin:
         command = line.strip()
         if command == ":clear":
@@ -91,11 +93,17 @@ def main():
         if len(line) > 1:
             sql_query += line
         elif sql_query:
-            sql_tree = parse(sql_query)
-            transform_tree(sql_tree)
-            sql_string = format(sql_tree)
-            print(sql_string)
-            sql_query = ""
+            try:
+                sql_tree = parse(sql_query)
+                transform_tree(sql_tree)
+                sql_string = format(sql_tree)
+                print(sql_string)
+            except ParseException as exc:
+                print("SYNTAX ERROR:", exc.message)
+            except TypeError as exc:
+                print("TYPE ERROR:", exc)
+            finally:
+                sql_query = ""
         print("> ", end="", flush=True)
 
 
