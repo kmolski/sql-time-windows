@@ -1,9 +1,31 @@
 #!/usr/bin/env python3
 
-from sql_generator import Select, Computed, GroupByTimeWindow, TIME_UNITS
+import sys
+
+from sql_generator import GroupByTimeWindow, TIME_UNITS
 from mo_sql_parsing import parse, format
 
-import sys
+HELP_TEXT = """sql-time-windows script generator v0.1.0
+
+This utility converts time-window queries to standard SQL queries that
+can be run on a real database. Time window queries have this general form:
+
+SELECT <columns>
+FROM <tables>
+WHERE <conditions>
+GROUP BY TIME_WINDOW(<time unit>, <timestamp column name>,
+                     <optional window width>, <optional window offset>)
+
+To convert a time-window query, type it below and press Enter two times.
+
+At any point, you can enter the following commands to access additional functionality:
+  ':quit' - Quit the program
+  ':help' - Show the help screen
+"""
+
+
+def print_help():
+    print(HELP_TEXT)
 
 
 def extract_time_window_args(time_window_funcall):
@@ -39,8 +61,7 @@ def transform_tree(sql_tree):
         time_window_funcall = groupby_expr["time_window"]
         args = extract_time_window_args(time_window_funcall)
 
-        group_by = GroupByTimeWindow(None, *args)
-        select_tree, datediff_tree = group_by.sql_tree()
+        select_tree, datediff_tree = GroupByTimeWindow(None, *args).sql_tree()
 
         if isinstance(select_columns, list):
             sql_tree["select"].append(select_tree)
@@ -53,11 +74,15 @@ def transform_tree(sql_tree):
 
 
 def main():
-    sql_query = ""
+    print_help()
     print("> ", end="", flush=True)
+
+    sql_query = ""
     for line in sys.stdin:
         if line.strip() == ":quit":
             break
+        if line.strip() == ":help":
+            print_help()
         if len(line) <= 1:
             sql_tree = parse(sql_query)
             transform_tree(sql_tree)
