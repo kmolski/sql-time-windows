@@ -56,6 +56,8 @@ def main():
     sql_query = ""
     print("> ", end="", flush=True)
     for line in sys.stdin:
+        if line.strip() == ":quit":
+            break
         if len(line) <= 1:
             sql_tree = parse(sql_query)
             transform_tree(sql_tree)

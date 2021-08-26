@@ -103,7 +103,7 @@ class GroupByTimeWindow:
                     {"literal": "1970-01-01 00:00"},
                 ]
             },
-            "name": column,
+            "name": "TimeWindowStart",
         }
 
         if TIME_UNITS.index(time_unit) < 3:
