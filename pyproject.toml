@@ -6,7 +6,7 @@ authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-mo-sql-parsing = {git = "https://github.com/kmolski/mo-sql-parsing.git", rev = "dev"}
+mo-sql-parsing = {git = "https://github.com/kmolski/mo-sql-parsing.git", rev = "e711635"}
 
 [tool.poetry.dev-dependencies]
 
