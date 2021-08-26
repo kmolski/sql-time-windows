@@ -14,7 +14,7 @@ can be run on a real database. Time window queries have this general form:
 SELECT <columns>
 FROM <tables>
 WHERE <conditions>
-GROUP BY TIME_WINDOW(<time unit>, <timestamp column name>,
+GROUP BY TIME_WINDOW(<timestamp column name>, <time unit>,
                      <optional window width>, <optional window offset>)
 
 To convert a time-window query, type it below and press Enter two times.
@@ -39,18 +39,18 @@ def extract_time_window_args(time_window_funcall):
     if not 2 <= time_window_argc <= 4:
         raise TypeError("TIME_WINDOW takes from 2 to 4 arguments")
 
-    time_unit = time_window_funcall[0]
+    column = time_window_funcall[0]
+    if isinstance(column, dict):
+        column = list(column.keys())[0]
+    if not isinstance(column, str):
+        raise TypeError("COLUMN must be a column name")
+
+    time_unit = time_window_funcall[1]
     if not isinstance(time_unit, str) or time_unit.upper() not in TIME_UNITS:
         raise TypeError(
             "TIME_UNIT must be a valid time unit: "
             + f"{', '.join(TIME_UNITS[:-1])}, or {TIME_UNITS[-1]}"
         )
-
-    column = time_window_funcall[1]
-    if isinstance(column, dict):
-        column = list(column.keys())[0]
-    if not isinstance(column, str):
-        raise TypeError("COLUMN must be a column name")
 
     width = None if time_window_argc <= 2 else time_window_funcall[2]
     if width is not None and not isinstance(width, int):
