@@ -83,14 +83,14 @@ def main():
             break
         if line.strip() == ":help":
             print_help()
-        if len(line) <= 1:
+        if len(line) > 1:
+            sql_query += line
+        elif sql_query:
             sql_tree = parse(sql_query)
             transform_tree(sql_tree)
             sql_string = format(sql_tree)
             print(sql_string)
             sql_query = ""
-        else:
-            sql_query += line
         print("> ", end="", flush=True)
 
 
