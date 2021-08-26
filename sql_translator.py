@@ -30,6 +30,10 @@ def print_help():
     print(HELP_TEXT)
 
 
+def print_prompt():
+    print("> ", end="", flush=True)
+
+
 def extract_time_window_args(time_window_funcall):
     time_window_argc = len(time_window_funcall)
     if not 2 <= time_window_argc <= 4:
@@ -37,7 +41,10 @@ def extract_time_window_args(time_window_funcall):
 
     time_unit = time_window_funcall[0]
     if not isinstance(time_unit, str) or time_unit.upper() not in TIME_UNITS:
-        raise TypeError("TIME_UNIT must be a valid time unit")
+        raise TypeError(
+            "TIME_UNIT must be a valid time unit: "
+            + f"{', '.join(TIME_UNITS[:-1])}, or {TIME_UNITS[-1]}"
+        )
 
     column = time_window_funcall[1]
     if isinstance(column, dict):
@@ -77,7 +84,7 @@ def transform_tree(sql_tree):
 
 def main():
     print_help()
-    print("> ", end="", flush=True)
+    print_prompt()
 
     sql_query = ""
 
@@ -104,7 +111,7 @@ def main():
                 print("TYPE ERROR:", exc)
             finally:
                 sql_query = ""
-        print("> ", end="", flush=True)
+        print_prompt()
 
 
 if __name__ == "__main__":
