@@ -90,14 +90,14 @@ def main():
 
     for line in sys.stdin:
         command = line.strip()
-        if command == ":clear":
-            sql_query = ""
-        elif command == ":help":
-            print_help()
-        elif command == ":quit":
-            break
-
-        if len(line) > 1:
+        if command.startswith(":"):
+            if command == ":clear":
+                sql_query = ""
+            if command == ":help":
+                print_help()
+            elif command == ":quit":
+                break
+        elif len(line) > 1:
             sql_query += line
         elif sql_query:
             try:
