@@ -27,11 +27,13 @@ At any point, you can enter the following commands to access additional function
 
 
 def print_help():
-    print(HELP_TEXT)
+    if sys.stdout.isatty():
+        print(HELP_TEXT)
 
 
 def print_prompt():
-    print("> ", end="", flush=True)
+    if sys.stdout.isatty():
+        print("> ", end="", flush=True)
 
 
 def extract_time_window_args(time_window_funcall):
@@ -82,12 +84,8 @@ def transform_tree(sql_tree):
     return sql_tree
 
 
-def main():
-    print_help()
-    print_prompt()
-
+def main_loop():
     sql_query = ""
-
     for line in sys.stdin:
         command = line.strip()
         if command.startswith(":"):
@@ -106,12 +104,22 @@ def main():
                 sql_string = format(sql_tree)
                 print(sql_string)
             except ParseException as exc:
-                print("SYNTAX ERROR:", exc.message)
+                print("SYNTAX ERROR:", exc.message, file=sys.stderr)
             except TypeError as exc:
-                print("TYPE ERROR:", exc)
+                print("TYPE ERROR:", exc, file=sys.stderr)
             finally:
                 sql_query = ""
         print_prompt()
+
+
+def main():
+    print_help()
+    print_prompt()
+
+    try:
+        main_loop()
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == "__main__":
