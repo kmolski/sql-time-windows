@@ -27,12 +27,12 @@ At any point, you can enter the following commands to access additional function
 
 
 def print_help():
-    if sys.stdout.isatty():
+    if sys.stdin.isatty() and sys.stdout.isatty():
         print(HELP_TEXT)
 
 
 def print_prompt():
-    if sys.stdout.isatty():
+    if sys.stdin.isatty() and sys.stdout.isatty():
         print("> ", end="", flush=True)
 
 
