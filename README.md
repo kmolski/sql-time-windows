@@ -1,7 +1,7 @@
 # sql-time-windows
 SQL extension for time-based window aggregation
 
-# Installation
+# How to run
 Requirements:
 - Python 3 (preferably 3.9, might work with other versions)
 - Poetry tool for Python (```pip install poetry```)
