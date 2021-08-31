@@ -55,7 +55,7 @@ def main(argv):
             None, column, unit, width, offset
         ).sql_strings()
     
-        print(select)
+        print(f"{select} AS TimeWindowStart")
         print(groupby)
     except Exception as ex:
         print(ex.args[0])
